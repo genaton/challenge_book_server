@@ -41,6 +41,8 @@ async function postLivro(req, res) {
       const capa = await buscarCapaLivro(livroNovo.titulo);
       if (capa) livroNovo.imagem = capa;
     }
+    livroNovo.titulo = livroNovo.titulo.toLowerCase();
+
 
     await insereLivro(livroNovo);
     res
@@ -61,13 +63,16 @@ async function patchLivro(req, res) {
       return res.status(404).json({ mensagem: 'Livro não encontrado' });
     }
 
-    // Se o título foi alterado, buscar nova capa
-    if (
-      modificacoes.titulo &&
-      modificacoes.titulo !== livroAtual.titulo
-    ) {
-      const novaCapa = await buscarCapaLivro(modificacoes.titulo);
-      modificacoes.imagem = novaCapa || null; 
+    // Se o título foi alterado
+    if (modificacoes.titulo) {
+      // Padroniza para lowercase
+      modificacoes.titulo = modificacoes.titulo.toLowerCase();
+
+      // Se o título mudou, busca nova capa
+      if (modificacoes.titulo !== livroAtual.titulo) {
+        const novaCapa = await buscarCapaLivro(modificacoes.titulo);
+        modificacoes.imagem = novaCapa || null; // Remove imagem se não encontrar nova
+      }
     }
 
     const livroAtualizado = await modificaLivro(modificacoes, id);
