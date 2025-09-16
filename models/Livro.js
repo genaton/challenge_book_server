@@ -11,8 +11,8 @@ const Livro = sequelize.define('Livro', {
   titulo: {
     type: DataTypes.STRING,
     allowNull: false
-  },
-  imagem: {
+  }
+  , imagem: {
     type: DataTypes.STRING,
     allowNull: true 
   }

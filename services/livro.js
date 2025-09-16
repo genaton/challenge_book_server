@@ -1,41 +1,33 @@
-const fs = require("fs");
+const Livro = require('../models/Livro');
 
-function getTodosLivros() {
-  return JSON.parse(fs.readFileSync("livros.json"));
+async function getTodosLivros() {
+  return await Livro.findAll();
 }
 
-function getLivroPorId(id) {
-  const livros = JSON.parse(fs.readFileSync("livros.json"));
-  const livroFiltrato = livros.filter((livro) => livro.id === id)[0];
-  return livroFiltrato;
+async function getLivroPorId(id) {
+  return await Livro.findByPk(id);
 }
 
-function insereLivro(livroNovo) {
-  const livros = JSON.parse(fs.readFileSync("livros.json"));
-  const novaListaLivros = [...livros, livroNovo];
-  fs.writeFileSync("livros.json", JSON.stringify(novaListaLivros));
+async function insereLivro(livroNovo) {
+  await Livro.create(livroNovo);
 }
 
-function modificaLivro(modificacoes, id) {
-  let livrosAtuais = JSON.parse(fs.readFileSync("livros.json"));
-  const indicieModificado = livrosAtuais.findIndex((livro) => livro.id === id);
+async function modificaLivro(modificacoes, id) {
+  const livro = await Livro.findByPk(id);
+  if (!livro) throw new Error('Livro não encontrado');
 
-  const conteudoMudado = {
-    ...livrosAtuais[indicieModificado],
-    ...modificacoes,
-  };
-
-  livrosAtuais[indicieModificado] = conteudoMudado;
-
-  fs.writeFileSync("livros.json", JSON.stringify(livrosAtuais));
+  await livro.update(modificacoes);
+  return livro;
 }
 
-function deletaLivroPorId(id) {
-  const livros = JSON.parse(fs.readFileSync("livros.json"));
-  const livroFiltratos = livros.filter((livro) => livro.id !== id);
 
-  fs.writeFileSync("livros.json", JSON.stringify(livroFiltratos));
+async function deletaLivroPorId(id) {
+  const livro = await Livro.findByPk(id);
+  if (!livro) throw new Error('Livro não encontrado');
+
+  await livro.destroy();
 }
+
 
 module.exports = {
   getTodosLivros,

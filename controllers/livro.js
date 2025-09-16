@@ -6,105 +6,86 @@ const {
   deletaLivroPorId,
 } = require("../services/livro");
 
-function getLivros(req, res) {
+const { buscarCapaLivro } = require("../services/capaLivro");
+
+async function getLivros(req, res) {
   try {
-    const livros = getTodosLivros();
-    res.send(livros);
+    const livros = await getTodosLivros();
+    res.status(200).json(livros);
   } catch (error) {
-    res.status(500);
-    res.send(error.message);
-  }
-}
-function getLivro(req, res) {
-  try {
-    const id = req.params.id;
-    if (id && Number(id)) {
-      const livro = getLivroPorId(id);
-      res.send(livro);
-    } else {
-      res.status(422);
-      res.send("Id inválido");
-    }
-  } catch (error) {
-    res.status(500);
-    res.send(error.message);
-  }
-}
-function postLivro(req, res) {
-  try {
-    const livroNovo = req.body;
-    if (req.body.nome && req.body.id) {
-      if (isNaN(Number(req.body.id))) {
-        res.status(422);
-        res.send("O campo id deve ser um número");
-        return;
-      }
-      insereLivro(livroNovo);
-      res.status(201);
-      res.send("livro inserido com sucesso");
-    } else if (req.body.nome) {
-      res.status(422);
-      res.send("O id nome é obrigatório");
-    } else if (req.body.id) {
-      res.status(422);
-      res.send("O campo nome é obrigatório");
-    } else {
-      res.status(422);
-      res.send("É obrigatório informar o id e o nome do livro");
-    }
-  } catch (error) {
-    res.status(500);
-    res.send(error.message);
+    res.status(500).json({ erro: error.message });
   }
 }
 
-function patchLivro(req, res) {
+async function getLivro(req, res) {
   try {
-    const id = req.params.id;
-
-    if (id && Number(id)) {
-      const livro = getLivroPorId(id);
-      if (!livro) {
-        res.status(404);
-        res.send("Id inexistente");
-        return;
-      }
-      const body = req.body;
-      modificaLivro(body, id);
-      res.send("item modificado com sucesso");
-    } else {
-      res.status(422);
-      res.send("Id inválido");
-    }
-  } catch (error) {
-    res.status(500);
-    res.send(error.message);
-  }
-}
-
-function deleteLivro(req, res) {
-  try {
-    const id = req.params.id;
-
-    if (!id || isNaN(Number(id))) {
-      res.status(422);
-      res.send("Id inválido");
-      return;
-    }
-
-    const livro = getLivroPorId(id); 
+    const id = parseInt(req.params.id);
+    const livro = await getLivroPorId(id);
 
     if (!livro) {
-      res.status(404);
-      res.send("Id inexistente");
-      return;
+      return res.status(404).json({ mensagem: "Livro não encontrado" });
     }
 
-    deletaLivroPorId(id);
-    res.send("Item deletado com sucesso");
+    res.status(200).json(livro);
   } catch (error) {
-    res.status(500);
-    res.send(error.message);
+    res.status(500).json({ erro: error.message });
+  }
+}
+
+async function postLivro(req, res) {
+  try {
+    let livroNovo = req.body;
+
+    // Busca capa automaticamente se não foi informada
+    if (!livroNovo.imagem && livroNovo.titulo) {
+      const capa = await buscarCapaLivro(livroNovo.titulo);
+      if (capa) livroNovo.imagem = capa;
+    }
+
+    await insereLivro(livroNovo);
+    res
+      .status(201)
+      .json({ mensagem: "Livro inserido com sucesso", livro: livroNovo });
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+}
+
+async function patchLivro(req, res) {
+  try {
+    const id = parseInt(req.params.id);
+    let modificacoes = req.body;
+
+    const livroAtual = await getLivroPorId(id);
+    if (!livroAtual) {
+      return res.status(404).json({ mensagem: 'Livro não encontrado' });
+    }
+
+    // Se o título foi alterado, buscar nova capa
+    if (
+      modificacoes.titulo &&
+      modificacoes.titulo !== livroAtual.titulo
+    ) {
+      const novaCapa = await buscarCapaLivro(modificacoes.titulo);
+      if (novaCapa) modificacoes.imagem = novaCapa;
+    }
+
+    const livroAtualizado = await modificaLivro(modificacoes, id);
+    res.status(200).json({
+      mensagem: 'Livro modificado com sucesso',
+      livro: livroAtualizado
+    });
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
+  }
+}
+async function deleteLivro(req, res) {
+  try {
+    const id = parseInt(req.params.id);
+    await deletaLivroPorId(id);
+    res.status(200).json({ mensagem: "Livro deletado com sucesso" });
+  } catch (error) {
+    res.status(500).json({ erro: error.message });
   }
 }
 
