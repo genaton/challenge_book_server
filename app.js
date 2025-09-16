@@ -1,9 +1,11 @@
 const express = require("express");
 const rotaLivro = require("./routes/livro");
+const cors = require("cors");
 require('./db'); // 🔌 Conecta ao MySQL
 
 const app = express();
 app.use(express.json());
+app.use(cors({origin:"*"}));
 
 const port = 8000;
 
