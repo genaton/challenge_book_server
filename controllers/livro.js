@@ -67,7 +67,7 @@ async function patchLivro(req, res) {
       modificacoes.titulo !== livroAtual.titulo
     ) {
       const novaCapa = await buscarCapaLivro(modificacoes.titulo);
-      if (novaCapa) modificacoes.imagem = novaCapa;
+      modificacoes.imagem = novaCapa || null; 
     }
 
     const livroAtualizado = await modificaLivro(modificacoes, id);
